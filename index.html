@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Protocolo Enfermagem - PCR, IAM e AVE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Animação para piscar a tela quando o ciclo de 2 min acabar */
+        @keyframes pulse-red {
+            0%, 100% { background-color: #fee2e2; }
+            50% { background-color: #fca5a5; }
+        }
+        .alert-cycle {
+            animation: pulse-red 1s infinite;
+            border: 2px solid #ef4444;
+        }
+        /* Ocultar barra de rolagem mas manter funcionalidade */
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans h-screen flex flex-col overflow-hidden selection:bg-blue-200">
+
+    <!-- Cabeçalho -->
+    <header class="bg-blue-700 text-white p-4 shadow-md z-10 shrink-0">
+        <h1 class="text-xl font-bold text-center">App Emergência Enfermagem</h1>
+        <div id="status-bar" class="mt-2 text-center text-sm font-medium opacity-80">
+            Sistema Pronto - Aguardando Inicialização
+        </div>
+    </header>
+
+    <!-- Área Principal de Conteúdo -->
+    <main class="flex-1 overflow-y-auto relative w-full max-w-2xl mx-auto bg-white shadow-lg">
+        
+        <!-- ABA 1: PCR (Parada Cardiorrespiratória) -->
+        <section id="tab-pcr" class="tab-content active p-4 pb-24">
+            
+            <!-- Cronômetros -->
+            <div class="flex gap-4 mb-6">
+                <div class="flex-1 bg-gray-100 rounded-xl p-4 text-center shadow-inner">
+                    <p class="text-xs text-gray-500 uppercase font-bold mb-1">Tempo Total</p>
+                    <p id="time-total" class="text-3xl font-mono font-bold text-gray-800">00:00</p>
+                </div>
+                <div id="cycle-card" class="flex-1 bg-blue-50 rounded-xl p-4 text-center shadow-inner transition-colors duration-300">
+                    <p class="text-xs text-blue-600 uppercase font-bold mb-1">Ciclo (Troca/Ritmo)</p>
+                    <p id="time-cycle" class="text-3xl font-mono font-bold text-blue-700">02:00</p>
+                </div>
+            </div>
+
+            <!-- Controles Principais -->
+            <button id="btn-toggle-pcr" onclick="togglePCR()" class="w-full bg-red-600 active:bg-red-700 text-white font-bold text-lg py-4 rounded-xl shadow-lg mb-6 transition-transform transform active:scale-95 flex items-center justify-center gap-2">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                INICIAR PROTOCOLO PCR
+            </button>
+
+            <!-- Ações (Desabilitadas por padrão) -->
+            <div id="action-buttons" class="grid grid-cols-2 gap-3 opacity-50 pointer-events-none transition-opacity">
+                <button onclick="registerAction('Choque Aplicado')" class="bg-yellow-500 active:bg-yellow-600 text-white font-bold py-3 rounded-lg shadow active:scale-95 transition-transform">
+                    ⚡ CHOQUE
+                </button>
+                <button onclick="resetCycle()" class="bg-blue-500 active:bg-blue-600 text-white font-bold py-3 rounded-lg shadow active:scale-95 transition-transform text-sm">
+                    🔄 RESETAR CICLO (2 Min)
+                </button>
+
+                <button id="btn-epi" onclick="administerEpi()" class="bg-purple-600 active:bg-purple-700 text-white font-bold py-3 rounded-lg shadow active:scale-95 transition-transform flex flex-col items-center justify-center col-span-2">
+                    <span>💉 EPINEFRINA (1mg)</span>
+                    <span id="epi-status" class="text-xs font-normal opacity-80 mt-1">Pronta para uso</span>
+                </button>
+
+                <button onclick="registerAction('Amiodarona/Lidocaína')" class="bg-indigo-500 active:bg-indigo-600 text-white font-bold py-3 rounded-lg shadow active:scale-95 transition-transform text-sm">
+                    💊 AMIODARONA / LIDO
+                </button>
+                <button onclick="registerAction('Via Aérea Avançada')" class="bg-teal-500 active:bg-teal-600 text-white font-bold py-3 rounded-lg shadow active:scale-95 transition-transform text-sm">
+                    🫁 VIA AÉREA AVANÇ.
+                </button>
+            </div>
+            
+            <div class="mt-8 text-center text-xs text-gray-400">
+                Desenvolvido por Jaime Eduardo<br>Whats: (51) 98550-2897
+            </div>
+        </section>
+
+        <!-- ABA 2: IAM / AVE -->
+        <section id="tab-iam-ave" class="tab-content p-4 pb-24">
+            <h2 class="text-lg font-bold text-red-700 border-b-2 border-red-200 pb-2 mb-4">Protocolo IAM (MONAB)</h2>
+            <div class="space-y-3 mb-8">
+                <div class="bg-red-50 p-3 rounded-lg border border-red-100 shadow-sm">
+                    <h3 class="font-bold text-red-800">M - Morfina</h3>
+                    <p class="text-sm text-gray-700"><strong>Dose:</strong> 2 a 4 mg IV a cada 5 a 15 min.</p>
+                    <p class="text-xs text-gray-500 mt-1">Indicado se dor refratária ao nitrato.</p>
+                </div>
+                <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 shadow-sm">
+                    <h3 class="font-bold text-blue-800">O - Oxigênio</h3>
+                    <p class="text-sm text-gray-700"><strong>Alvo:</strong> Manter SatO2 > 90%.</p>
+                    <p class="text-xs text-gray-500 mt-1">Cateter nasal 2 a 4 L/min se necessário.</p>
+                </div>
+                <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 shadow-sm">
+                    <h3 class="font-bold text-gray-800">N - Nitrato (Isossorbida / Tridil)</h3>
+                    <p class="text-sm text-gray-700"><strong>Dose:</strong> 5mg Sublingual (pode repetir até 3x).</p>
+                    <p class="text-xs text-red-600 font-bold mt-1">⚠ CONTRAINDICADO: Infarto de VD ou uso recente de Sildenafil/Tadalafila.</p>
+                </div>
+                <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200 shadow-sm">
+                    <h3 class="font-bold text-yellow-800">A - AAS (Aspirina)</h3>
+                    <p class="text-sm text-gray-700"><strong>Dose:</strong> 160 a 325 mg (Mastigar).</p>
+                </div>
+                <div class="bg-purple-50 p-3 rounded-lg border border-purple-100 shadow-sm">
+                    <h3 class="font-bold text-purple-800">B - Clopidogrel (ou Ticagrelor)</h3>
+                    <p class="text-sm text-gray-700"><strong>Dose de Ataque:</strong> 300 mg a 600 mg VO.</p>
+                </div>
+            </div>
+
+            <h2 class="text-lg font-bold text-indigo-700 border-b-2 border-indigo-200 pb-2 mb-4">Protocolo AVE</h2>
+            <div class="space-y-3">
+                <div class="bg-orange-50 p-3 rounded-lg border border-orange-200 shadow-sm">
+                    <h3 class="font-bold text-orange-800">Primeiros Passos (Emergência)</h3>
+                    <ul class="text-sm text-gray-700 list-disc pl-5 mt-1">
+                        <li><strong>HGT IMEDIATO:</strong> Descartar hipoglicemia (simula AVE).</li>
+                        <li>Acesso Venoso Periférico calibroso (Evitar punções desnecessárias se suspeita de isquemia p/ trombólise).</li>
+                        <li>Monitorização e O2 (se Sat < 94%).</li>
+                    </ul>
+                </div>
+                <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100 shadow-sm">
+                    <h3 class="font-bold text-indigo-800">Trombólise (Alteplase / rt-PA)</h3>
+                    <p class="text-sm text-gray-700 mt-1"><strong>Dose Total:</strong> 0,9 mg/kg (Dose Máxima: 90 mg).</p>
+                    <div class="mt-2 text-sm bg-white p-2 rounded border border-indigo-200">
+                        <p><strong>Preparo/Administração:</strong></p>
+                        <ul class="list-disc pl-5 text-indigo-900 font-medium">
+                            <li>10% da dose em Bolus (durante 1 minuto).</li>
+                            <li>90% da dose em Bomba de Infusão (durante 60 minutos).</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="bg-red-50 p-3 rounded-lg border border-red-100 shadow-sm">
+                    <h3 class="font-bold text-red-800">Controle Pressórico (PA)</h3>
+                    <p class="text-sm text-gray-700 mt-1">
+                        Para trombolisar, a PA deve estar <strong>< 185/110 mmHg</strong>.<br>
+                        Durante e após (24h): Manter <strong>< 180/105 mmHg</strong>.
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">Fármacos comuns: Nitroprussiato de Sódio (Nipride), Labetalol, Metoprolol.</p>
+                </div>
+            </div>
+
+            <div class="mt-8 text-center text-xs text-gray-400">
+                Desenvolvido por Jaime Eduardo<br>Whats: (51) 98550-2897
+            </div>
+        </section>
+
+        <!-- ABA 3: 5Hs e 5Ts -->
+        <section id="tab-h5t" class="tab-content p-4 pb-24">
+            <h2 class="text-lg font-bold text-gray-800 mb-4 text-center">Causas Reversíveis de PCR</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <!-- 5Hs -->
+                <div class="bg-blue-50 p-3 rounded-xl shadow-sm border border-blue-100">
+                    <h3 class="font-bold text-blue-800 text-center mb-2 border-b border-blue-200 pb-1">Os 5 H's</h3>
+                    <ul class="text-sm space-y-2 text-gray-700">
+                        <li><strong>Hipovolemia:</strong> Reposição volêmica</li>
+                        <li><strong>Hipóxia:</strong> Via aérea e ventilação</li>
+                        <li><strong>Hidrogênio (Acidose):</strong> Bicarbonato/Ventilação</li>
+                        <li><strong>Hipo/Hipercalemia:</strong> Repor potássio / Gluconato de cálcio + Insulina</li>
+                        <li><strong>Hipotermia:</strong> Aquecimento ativo</li>
+                    </ul>
+                </div>
+                <!-- 5Ts -->
+                <div class="bg-red-50 p-3 rounded-xl shadow-sm border border-red-100">
+                    <h3 class="font-bold text-red-800 text-center mb-2 border-b border-red-200 pb-1">Os 5 T's</h3>
+                    <ul class="text-sm space-y-2 text-gray-700">
+                        <li><strong>Tensão (Pneumotórax):</strong> Descompressão com agulha</li>
+                        <li><strong>Tamponamento Cardíaco:</strong> Pericardiocentese</li>
+                        <li><strong>Toxinas:</strong> Antídotos específicos</li>
+                        <li><strong>Trombose Pulmonar (TEP):</strong> Fibrinolítico/Trombectomia</li>
+                        <li><strong>Trombose Coronariana:</strong> Intervenção percutânea</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="mt-8 text-center text-xs text-gray-400">
+                Desenvolvido por Jaime Eduardo<br>Whats: (51) 98550-2897
+            </div>
+        </section>
+
+        <!-- ABA 4: Histórico -->
+        <section id="tab-log" class="tab-content p-4 pb-24 h-full flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold text-gray-800">Registro de Eventos</h2>
+                <button onclick="copyLog()" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-gray-700 active:scale-95 transition-transform flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                    Copiar
+                </button>
+            </div>
+            
+            <div id="log-container" class="flex-1 bg-gray-50 border border-gray-200 rounded-lg p-3 overflow-y-auto space-y-2 min-h-[300px] shadow-inner text-sm">
+                <!-- Logs aparecerão aqui -->
+                <div class="text-gray-400 text-center italic mt-10">Nenhum evento registrado ainda.</div>
+            </div>
+
+            <div class="mt-8 text-center text-xs text-gray-400">
+                Desenvolvido por Jaime Eduardo<br>Whats: (51) 98550-2897
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Navegação Inferior (Bottom Tabs) -->
+    <nav class="bg-white border-t border-gray-200 flex justify-around items-center h-16 shrink-0 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-20 w-full max-w-2xl mx-auto">
+        <button onclick="switchTab('pcr')" class="nav-btn text-blue-600 flex flex-col items-center p-2 w-1/4 transition-colors" data-target="tab-pcr">
+            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+            <span class="text-[10px] font-bold">PCR</span>
+        </button>
+        <button onclick="switchTab('iam-ave')" class="nav-btn text-gray-400 hover:text-gray-600 flex flex-col items-center p-2 w-1/4 transition-colors" data-target="tab-iam-ave">
+            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+            <span class="text-[10px] font-bold">IAM / AVE</span>
+        </button>
+        <button onclick="switchTab('h5t')" class="nav-btn text-gray-400 hover:text-gray-600 flex flex-col items-center p-2 w-1/4 transition-colors" data-target="tab-h5t">
+            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+            <span class="text-[10px] font-bold">5H / 5T</span>
+        </button>
+        <button onclick="switchTab('log')" class="nav-btn text-gray-400 hover:text-gray-600 flex flex-col items-center p-2 w-1/4 transition-colors relative" data-target="tab-log">
+            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span class="text-[10px] font-bold">Histórico</span>
+            <span id="log-badge" class="absolute top-1 right-3 bg-red-500 text-white text-[9px] font-bold rounded-full h-4 w-4 flex items-center justify-center hidden">0</span>
+        </button>
+    </nav>
+
+    <!-- Script Principal -->
+    <script>
+        // Variáveis de Estado
+        let isPcrActive = false;
+        let totalSeconds = 0;
+        let cycleSeconds = 120; // 2 minutos
+        let timerInterval = null;
+        let logs = [];
+        let pcrStartTime = null;
+        let lastEpiTime = -999; // Para garantir que pode aplicar na primeira vez
+
+        // Elementos DOM
+        const elTimeTotal = document.getElementById('time-total');
+        const elTimeCycle = document.getElementById('time-cycle');
+        const elCycleCard = document.getElementById('cycle-card');
+        const btnTogglePcr = document.getElementById('btn-toggle-pcr');
+        const actionButtons = document.getElementById('action-buttons');
+        const elLogContainer = document.getElementById('log-container');
+        const logBadge = document.getElementById('log-badge');
+        const btnEpi = document.getElementById('btn-epi');
+        const epiStatus = document.getElementById('epi-status');
+        const statusBar = document.getElementById('status-bar');
+
+        // Função de formatação de tempo (MM:SS)
+        function formatTime(sec) {
+            const m = Math.floor(sec / 60).toString().padStart(2, '0');
+            const s = (sec % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        // Pegar hora atual (HH:MM:SS)
+        function getClockTime() {
+            const now = new Date();
+            return now.toLocaleTimeString('pt-BR');
+        }
+
+        // Navegação por abas
+        function switchTab(tabId) {
+            // Oculta todas as abas
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            // Remove cor de todos os botões
+            document.querySelectorAll('.nav-btn').forEach(el => {
+                el.classList.remove('text-blue-600');
+                el.classList.add('text-gray-400');
+            });
+
+            // Mostra a aba clicada
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            
+            // Pinta o botão ativo
+            const activeBtn = document.querySelector(`.nav-btn[data-target="tab-${tabId}"]`);
+            activeBtn.classList.remove('text-gray-400');
+            activeBtn.classList.add('text-blue-600');
+
+            // Se for aba log, esconde badge
+            if(tabId === 'log') {
+                logBadge.classList.add('hidden');
+                logBadge.innerText = '0';
+            }
+        }
+
+        // Loop do Cronômetro
+        function tick() {
+            totalSeconds++;
+            if (cycleSeconds > 0) {
+                cycleSeconds--;
+            }
+
+            // Atualiza Visor
+            elTimeTotal.innerText = formatTime(totalSeconds);
+            elTimeCycle.innerText = formatTime(cycleSeconds);
+
+            // Lógica de alerta visual (Fim do ciclo 2 min)
+            if (cycleSeconds === 0) {
+                elCycleCard.classList.add('alert-cycle');
+            } else {
+                elCycleCard.classList.remove('alert-cycle');
+            }
+
+            // Lógica Inteligente da Epinefrina (3 a 5 min)
+            const timeSinceEpi = totalSeconds - lastEpiTime;
+            if (timeSinceEpi < 180 && lastEpiTime > 0) {
+                // Menos de 3 minutos: Desabilitar visualmente
+                btnEpi.classList.replace('bg-purple-600', 'bg-gray-400');
+                btnEpi.classList.replace('active:bg-purple-700', 'active:bg-gray-500');
+                let waitSecs = 180 - timeSinceEpi;
+                epiStatus.innerText = `Aguarde ${formatTime(waitSecs)}`;
+            } else {
+                // Pronta para uso
+                btnEpi.classList.replace('bg-gray-400', 'bg-purple-600');
+                btnEpi.classList.replace('active:bg-gray-500', 'active:bg-purple-700');
+                epiStatus.innerText = (lastEpiTime > 0) ? "Próxima Dose Ideal" : "Pronta para uso";
+            }
+        }
+
+        // Iniciar / Parar PCR
+        function togglePCR() {
+            if (!isPcrActive) {
+                // Iniciar
+                isPcrActive = true;
+                pcrStartTime = getClockTime();
+                timerInterval = setInterval(tick, 1000);
+                
+                // Atualizar UI
+                btnTogglePcr.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path></svg> FINALIZAR PROTOCOLO PCR';
+                btnTogglePcr.classList.replace('bg-red-600', 'bg-gray-800');
+                btnTogglePcr.classList.replace('active:bg-red-700', 'active:bg-gray-900');
+                actionButtons.classList.remove('opacity-50', 'pointer-events-none');
+                statusBar.innerText = `Atendimento Iniciado: ${pcrStartTime}`;
+                
+                registerAction("Início da RCP (Código Azul)");
+            } else {
+                // Parar
+                if (confirm("Tem certeza que deseja finalizar o protocolo? O cronômetro será parado.")) {
+                    isPcrActive = false;
+                    clearInterval(timerInterval);
+                    registerAction("Fim do Protocolo (RCP Finalizada)");
+                    
+                    // Atualizar UI
+                    btnTogglePcr.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path></svg> RETOMAR PROTOCOLO';
+                    btnTogglePcr.classList.replace('bg-gray-800', 'bg-red-600');
+                    btnTogglePcr.classList.replace('active:bg-gray-900', 'active:bg-red-700');
+                    actionButtons.classList.add('opacity-50', 'pointer-events-none');
+                    statusBar.innerText = "Protocolo Pausado/Finalizado";
+                }
+            }
+        }
+
+        // Resetar Ciclo 2 min
+        function resetCycle() {
+            cycleSeconds = 120;
+            elTimeCycle.innerText = "02:00";
+            elCycleCard.classList.remove('alert-cycle');
+            registerAction("Checagem de Ritmo / Troca Massagista");
+        }
+
+        // Registrar Epinefrina separadamente para controle de tempo
+        function administerEpi() {
+            lastEpiTime = totalSeconds;
+            registerAction("Epinefrina (1mg) Administrada");
+            
+            // Força a atualização do visual do botão
+            btnEpi.classList.replace('bg-purple-600', 'bg-gray-400');
+            btnEpi.classList.replace('active:bg-purple-700', 'active:bg-gray-500');
+            epiStatus.innerText = "Aguarde 03:00";
+        }
+
+        // Adicionar Ação ao Histórico
+        function registerAction(text) {
+            const timeStamp = getClockTime();
+            const relTime = formatTime(totalSeconds);
+            
+            const logEntry = {
+                id: Date.now(),
+                time: timeStamp,
+                relTime: relTime,
+                text: text
+            };
+            
+            logs.unshift(logEntry); // Add no início
+            renderLogs();
+            
+            // Mostrar Badge (se não estiver na aba de log)
+            if (!document.getElementById('tab-log').classList.contains('active')) {
+                logBadge.classList.remove('hidden');
+                let count = parseInt(logBadge.innerText);
+                logBadge.innerText = count + 1;
+            }
+        }
+
+        // Renderizar Histórico na Tela
+        function renderLogs() {
+            if (logs.length === 0) return;
+            
+            elLogContainer.innerHTML = '';
+            logs.forEach(log => {
+                const isImportant = log.text.includes("Epinefrina") || log.text.includes("Choque") || log.text.includes("Início") || log.text.includes("Fim");
+                
+                const div = document.createElement('div');
+                div.className = `flex justify-between items-center p-3 rounded bg-white shadow-sm border-l-4 ${isImportant ? 'border-red-500 font-bold' : 'border-blue-300'}`;
+                
+                div.innerHTML = `
+                    <span class="text-gray-800">${log.text}</span>
+                    <div class="text-right flex flex-col">
+                        <span class="text-xs text-gray-400">Tempo: ${log.relTime}</span>
+                        <span class="text-[10px] text-gray-400">${log.time}</span>
+                    </div>
+                `;
+                elLogContainer.appendChild(div);
+            });
+        }
+
+        // Copiar Relatório
+        function copyLog() {
+            if (logs.length === 0) {
+                alert("Nenhum evento para copiar.");
+                return;
+            }
+            
+            let report = "--- RELATÓRIO DE ATENDIMENTO (CÓDIGO AZUL) ---\n\n";
+            // Inverter para ficar em ordem cronológica no texto
+            let chronoLogs = [...logs].reverse(); 
+            
+            chronoLogs.forEach(log => {
+                report += `[${log.time}] (Tempo de PCR: ${log.relTime}) - ${log.text}\n`;
+            });
+            report += `\nTempo total de Reanimação: ${formatTime(totalSeconds)}\n`;
+            report += `Desenvolvido por Jaime Eduardo (Whats: 51 985502897)`;
+            
+            // Usar área de transferência
+            const tempInput = document.createElement("textarea");
+            tempInput.value = report;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+            
+            alert("Histórico copiado com sucesso! Você pode colar (Ctrl+V) no prontuário eletrônico.");
+        }
+    </script>
+</body>
+</html>
