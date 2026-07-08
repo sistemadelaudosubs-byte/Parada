@@ -22,209 +22,232 @@
         .tab-content.active { display: block; }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans h-screen flex flex-col overflow-hidden selection:bg-blue-200">
+<body class="bg-gray-100 text-gray-800 font-sans h-screen flex flex-col md:flex-row overflow-hidden selection:bg-blue-200">
 
-    <!-- Cabeçalho -->
-    <header class="bg-blue-700 text-white p-4 shadow-md z-10 shrink-0">
-        <h1 class="text-xl font-bold text-center">App Emergência Enfermagem</h1>
-        <div id="status-bar" class="mt-2 text-center text-sm font-medium opacity-80">
-            Sistema Pronto - Aguardando Inicialização
-        </div>
-    </header>
-
-    <!-- Área Principal de Conteúdo -->
-    <main class="flex-1 overflow-y-auto relative w-full max-w-2xl mx-auto bg-white shadow-lg">
-        
-        <!-- ABA 1: PCR (Parada Cardiorrespiratória) -->
-        <section id="tab-pcr" class="tab-content active p-4 pb-24">
-            
-            <!-- Cronômetros -->
-            <div class="flex gap-4 mb-6">
-                <div class="flex-1 bg-gray-100 rounded-xl p-4 text-center shadow-inner">
-                    <p class="text-xs text-gray-500 uppercase font-bold mb-1">Tempo Total</p>
-                    <p id="time-total" class="text-3xl font-mono font-bold text-gray-800">00:00</p>
-                </div>
-                <div id="cycle-card" class="flex-1 bg-blue-50 rounded-xl p-4 text-center shadow-inner transition-colors duration-300">
-                    <p class="text-xs text-blue-600 uppercase font-bold mb-1">Ciclo (Troca/Ritmo)</p>
-                    <p id="time-cycle" class="text-3xl font-mono font-bold text-blue-700">02:00</p>
-                </div>
-            </div>
-
-            <!-- Controles Principais -->
-            <button id="btn-toggle-pcr" onclick="togglePCR()" class="w-full bg-red-600 active:bg-red-700 text-white font-bold text-lg py-4 rounded-xl shadow-lg mb-6 transition-transform transform active:scale-95 flex items-center justify-center gap-2">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                INICIAR PROTOCOLO PCR
-            </button>
-
-            <!-- Ações (Desabilitadas por padrão) -->
-            <div id="action-buttons" class="grid grid-cols-2 gap-3 opacity-50 pointer-events-none transition-opacity">
-                <button onclick="registerAction('Choque Aplicado')" class="bg-yellow-500 active:bg-yellow-600 text-white font-bold py-3 rounded-lg shadow active:scale-95 transition-transform">
-                    ⚡ CHOQUE
-                </button>
-                <button onclick="resetCycle()" class="bg-blue-500 active:bg-blue-600 text-white font-bold py-3 rounded-lg shadow active:scale-95 transition-transform text-sm">
-                    🔄 RESETAR CICLO (2 Min)
-                </button>
-
-                <button id="btn-epi" onclick="administerEpi()" class="bg-purple-600 active:bg-purple-700 text-white font-bold py-3 rounded-lg shadow active:scale-95 transition-transform flex flex-col items-center justify-center col-span-2">
-                    <span>💉 EPINEFRINA (1mg)</span>
-                    <span id="epi-status" class="text-xs font-normal opacity-80 mt-1">Pronta para uso</span>
-                </button>
-
-                <button onclick="registerAction('Amiodarona/Lidocaína')" class="bg-indigo-500 active:bg-indigo-600 text-white font-bold py-3 rounded-lg shadow active:scale-95 transition-transform text-sm">
-                    💊 AMIODARONA / LIDO
-                </button>
-                <button onclick="registerAction('Via Aérea Avançada')" class="bg-teal-500 active:bg-teal-600 text-white font-bold py-3 rounded-lg shadow active:scale-95 transition-transform text-sm">
-                    🫁 VIA AÉREA AVANÇ.
-                </button>
-            </div>
-            
-            <div class="mt-8 text-center text-xs text-gray-400">
-                Desenvolvido por Jaime Eduardo<br>Whats: (51) 98550-2897
-            </div>
-        </section>
-
-        <!-- ABA 2: IAM / AVE -->
-        <section id="tab-iam-ave" class="tab-content p-4 pb-24">
-            <h2 class="text-lg font-bold text-red-700 border-b-2 border-red-200 pb-2 mb-4">Protocolo IAM (MONAB)</h2>
-            <div class="space-y-3 mb-8">
-                <div class="bg-red-50 p-3 rounded-lg border border-red-100 shadow-sm">
-                    <h3 class="font-bold text-red-800">M - Morfina</h3>
-                    <p class="text-sm text-gray-700"><strong>Dose:</strong> 2 a 4 mg IV a cada 5 a 15 min.</p>
-                    <p class="text-xs text-gray-500 mt-1">Indicado se dor refratária ao nitrato.</p>
-                </div>
-                <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 shadow-sm">
-                    <h3 class="font-bold text-blue-800">O - Oxigênio</h3>
-                    <p class="text-sm text-gray-700"><strong>Alvo:</strong> Manter SatO2 > 90%.</p>
-                    <p class="text-xs text-gray-500 mt-1">Cateter nasal 2 a 4 L/min se necessário.</p>
-                </div>
-                <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 shadow-sm">
-                    <h3 class="font-bold text-gray-800">N - Nitrato (Isossorbida / Tridil)</h3>
-                    <p class="text-sm text-gray-700"><strong>Dose:</strong> 5mg Sublingual (pode repetir até 3x).</p>
-                    <p class="text-xs text-red-600 font-bold mt-1">⚠ CONTRAINDICADO: Infarto de VD ou uso recente de Sildenafil/Tadalafila.</p>
-                </div>
-                <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200 shadow-sm">
-                    <h3 class="font-bold text-yellow-800">A - AAS (Aspirina)</h3>
-                    <p class="text-sm text-gray-700"><strong>Dose:</strong> 160 a 325 mg (Mastigar).</p>
-                </div>
-                <div class="bg-purple-50 p-3 rounded-lg border border-purple-100 shadow-sm">
-                    <h3 class="font-bold text-purple-800">B - Clopidogrel (ou Ticagrelor)</h3>
-                    <p class="text-sm text-gray-700"><strong>Dose de Ataque:</strong> 300 mg a 600 mg VO.</p>
-                </div>
-            </div>
-
-            <h2 class="text-lg font-bold text-indigo-700 border-b-2 border-indigo-200 pb-2 mb-4">Protocolo AVE</h2>
-            <div class="space-y-3">
-                <div class="bg-orange-50 p-3 rounded-lg border border-orange-200 shadow-sm">
-                    <h3 class="font-bold text-orange-800">Primeiros Passos (Emergência)</h3>
-                    <ul class="text-sm text-gray-700 list-disc pl-5 mt-1">
-                        <li><strong>HGT IMEDIATO:</strong> Descartar hipoglicemia (simula AVE).</li>
-                        <li>Acesso Venoso Periférico calibroso (Evitar punções desnecessárias se suspeita de isquemia p/ trombólise).</li>
-                        <li>Monitorização e O2 (se Sat < 94%).</li>
-                    </ul>
-                </div>
-                <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100 shadow-sm">
-                    <h3 class="font-bold text-indigo-800">Trombólise (Alteplase / rt-PA)</h3>
-                    <p class="text-sm text-gray-700 mt-1"><strong>Dose Total:</strong> 0,9 mg/kg (Dose Máxima: 90 mg).</p>
-                    <div class="mt-2 text-sm bg-white p-2 rounded border border-indigo-200">
-                        <p><strong>Preparo/Administração:</strong></p>
-                        <ul class="list-disc pl-5 text-indigo-900 font-medium">
-                            <li>10% da dose em Bolus (durante 1 minuto).</li>
-                            <li>90% da dose em Bomba de Infusão (durante 60 minutos).</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="bg-red-50 p-3 rounded-lg border border-red-100 shadow-sm">
-                    <h3 class="font-bold text-red-800">Controle Pressórico (PA)</h3>
-                    <p class="text-sm text-gray-700 mt-1">
-                        Para trombolisar, a PA deve estar <strong>< 185/110 mmHg</strong>.<br>
-                        Durante e após (24h): Manter <strong>< 180/105 mmHg</strong>.
-                    </p>
-                    <p class="text-xs text-gray-500 mt-1">Fármacos comuns: Nitroprussiato de Sódio (Nipride), Labetalol, Metoprolol.</p>
-                </div>
-            </div>
-
-            <div class="mt-8 text-center text-xs text-gray-400">
-                Desenvolvido por Jaime Eduardo<br>Whats: (51) 98550-2897
-            </div>
-        </section>
-
-        <!-- ABA 3: 5Hs e 5Ts -->
-        <section id="tab-h5t" class="tab-content p-4 pb-24">
-            <h2 class="text-lg font-bold text-gray-800 mb-4 text-center">Causas Reversíveis de PCR</h2>
-            <div class="grid grid-cols-2 gap-4">
-                <!-- 5Hs -->
-                <div class="bg-blue-50 p-3 rounded-xl shadow-sm border border-blue-100">
-                    <h3 class="font-bold text-blue-800 text-center mb-2 border-b border-blue-200 pb-1">Os 5 H's</h3>
-                    <ul class="text-sm space-y-2 text-gray-700">
-                        <li><strong>Hipovolemia:</strong> Reposição volêmica</li>
-                        <li><strong>Hipóxia:</strong> Via aérea e ventilação</li>
-                        <li><strong>Hidrogênio (Acidose):</strong> Bicarbonato/Ventilação</li>
-                        <li><strong>Hipo/Hipercalemia:</strong> Repor potássio / Gluconato de cálcio + Insulina</li>
-                        <li><strong>Hipotermia:</strong> Aquecimento ativo</li>
-                    </ul>
-                </div>
-                <!-- 5Ts -->
-                <div class="bg-red-50 p-3 rounded-xl shadow-sm border border-red-100">
-                    <h3 class="font-bold text-red-800 text-center mb-2 border-b border-red-200 pb-1">Os 5 T's</h3>
-                    <ul class="text-sm space-y-2 text-gray-700">
-                        <li><strong>Tensão (Pneumotórax):</strong> Descompressão com agulha</li>
-                        <li><strong>Tamponamento Cardíaco:</strong> Pericardiocentese</li>
-                        <li><strong>Toxinas:</strong> Antídotos específicos</li>
-                        <li><strong>Trombose Pulmonar (TEP):</strong> Fibrinolítico/Trombectomia</li>
-                        <li><strong>Trombose Coronariana:</strong> Intervenção percutânea</li>
-                    </ul>
-                </div>
-            </div>
-            
-            <div class="mt-8 text-center text-xs text-gray-400">
-                Desenvolvido por Jaime Eduardo<br>Whats: (51) 98550-2897
-            </div>
-        </section>
-
-        <!-- ABA 4: Histórico -->
-        <section id="tab-log" class="tab-content p-4 pb-24 h-full flex flex-col">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-bold text-gray-800">Registro de Eventos</h2>
-                <button onclick="copyLog()" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-gray-700 active:scale-95 transition-transform flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
-                    Copiar
-                </button>
-            </div>
-            
-            <div id="log-container" class="flex-1 bg-gray-50 border border-gray-200 rounded-lg p-3 overflow-y-auto space-y-2 min-h-[300px] shadow-inner text-sm">
-                <!-- Logs aparecerão aqui -->
-                <div class="text-gray-400 text-center italic mt-10">Nenhum evento registrado ainda.</div>
-            </div>
-
-            <div class="mt-8 text-center text-xs text-gray-400">
-                Desenvolvido por Jaime Eduardo<br>Whats: (51) 98550-2897
-            </div>
-        </section>
-
-    </main>
-
-    <!-- Navegação Inferior (Bottom Tabs) -->
-    <nav class="bg-white border-t border-gray-200 flex justify-around items-center h-16 shrink-0 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-20 w-full max-w-2xl mx-auto">
-        <button onclick="switchTab('pcr')" class="nav-btn text-blue-600 flex flex-col items-center p-2 w-1/4 transition-colors" data-target="tab-pcr">
-            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-            <span class="text-[10px] font-bold">PCR</span>
+    <nav class="bg-white border-t md:border-t-0 md:border-r border-gray-200 flex md:flex-col justify-around md:justify-start items-center h-16 md:h-full shrink-0 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] md:shadow-[2px_0_10px_rgba(0,0,0,0.05)] z-20 w-full md:w-28 md:py-6 order-last md:order-first transition-all">
+        <button onclick="switchTab('pcr')" class="nav-btn text-blue-600 flex flex-col items-center justify-center p-2 w-1/4 md:w-full md:mb-6 transition-colors" data-target="tab-pcr">
+            <svg class="w-6 h-6 md:w-8 md:h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+            <span class="text-[10px] md:text-xs font-bold">PCR</span>
         </button>
-        <button onclick="switchTab('iam-ave')" class="nav-btn text-gray-400 hover:text-gray-600 flex flex-col items-center p-2 w-1/4 transition-colors" data-target="tab-iam-ave">
-            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-            <span class="text-[10px] font-bold">IAM / AVE</span>
+        <button onclick="switchTab('iam-ave')" class="nav-btn text-gray-400 hover:text-gray-600 flex flex-col items-center justify-center p-2 w-1/4 md:w-full md:mb-6 transition-colors" data-target="tab-iam-ave">
+            <svg class="w-6 h-6 md:w-8 md:h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+            <span class="text-[10px] md:text-xs font-bold text-center leading-tight">IAM<br class="hidden md:block">/ AVE</span>
         </button>
-        <button onclick="switchTab('h5t')" class="nav-btn text-gray-400 hover:text-gray-600 flex flex-col items-center p-2 w-1/4 transition-colors" data-target="tab-h5t">
-            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
-            <span class="text-[10px] font-bold">5H / 5T</span>
+        <button onclick="switchTab('h5t')" class="nav-btn text-gray-400 hover:text-gray-600 flex flex-col items-center justify-center p-2 w-1/4 md:w-full md:mb-6 transition-colors" data-target="tab-h5t">
+            <svg class="w-6 h-6 md:w-8 md:h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+            <span class="text-[10px] md:text-xs font-bold text-center leading-tight">5H<br class="hidden md:block">/ 5T</span>
         </button>
-        <button onclick="switchTab('log')" class="nav-btn text-gray-400 hover:text-gray-600 flex flex-col items-center p-2 w-1/4 transition-colors relative" data-target="tab-log">
-            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <span class="text-[10px] font-bold">Histórico</span>
-            <span id="log-badge" class="absolute top-1 right-3 bg-red-500 text-white text-[9px] font-bold rounded-full h-4 w-4 flex items-center justify-center hidden">0</span>
+        <button onclick="switchTab('log')" class="nav-btn text-gray-400 hover:text-gray-600 flex flex-col items-center justify-center p-2 w-1/4 md:w-full transition-colors relative" data-target="tab-log">
+            <svg class="w-6 h-6 md:w-8 md:h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span class="text-[10px] md:text-xs font-bold">Histórico</span>
+            <span id="log-badge" class="absolute top-1 md:top-0 right-3 md:right-6 bg-red-500 text-white text-[9px] font-bold rounded-full h-4 w-4 flex items-center justify-center hidden">0</span>
         </button>
     </nav>
 
-    <!-- Script Principal -->
+    <div class="flex-1 flex flex-col overflow-hidden w-full relative bg-gray-100">
+        
+        <!-- Cabeçalho -->
+        <header class="bg-blue-700 text-white p-4 shadow-md z-10 shrink-0 flex flex-col md:flex-row justify-between items-center px-4 md:px-8">
+            <h1 class="text-xl md:text-2xl font-bold text-center md:text-left">App Emergência Enfermagem</h1>
+            <div id="status-bar" class="mt-2 md:mt-0 text-center text-sm font-medium opacity-80 bg-blue-800 px-4 py-1 rounded-full">
+                Sistema Pronto - Aguardando Inicialização
+            </div>
+        </header>
+
+        <!-- Área Principal de Conteúdo -->
+        <main class="flex-1 overflow-y-auto p-4 md:p-8">
+            
+            <div class="max-w-5xl mx-auto bg-white shadow-xl rounded-2xl md:min-h-[75vh] relative overflow-hidden">
+                
+                <!-- ABA 1: PCR -->
+                <section id="tab-pcr" class="tab-content active p-4 md:p-8 pb-24 md:pb-8">
+                    
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <!-- Coluna Esquerda: Tempos -->
+                        <div class="flex flex-col gap-6">
+                            <div class="flex gap-4">
+                                <div class="flex-1 bg-gray-100 rounded-xl p-4 md:p-6 text-center shadow-inner border border-gray-200">
+                                    <p class="text-xs md:text-sm text-gray-500 uppercase font-bold mb-1">Tempo Total</p>
+                                    <p id="time-total" class="text-4xl md:text-5xl font-mono font-bold text-gray-800">00:00</p>
+                                </div>
+                                <div id="cycle-card" class="flex-1 bg-blue-50 rounded-xl p-4 md:p-6 text-center shadow-inner border border-blue-100 transition-colors duration-300">
+                                    <p class="text-xs md:text-sm text-blue-600 uppercase font-bold mb-1">Ciclo (Troca/Ritmo)</p>
+                                    <p id="time-cycle" class="text-4xl md:text-5xl font-mono font-bold text-blue-700">02:00</p>
+                                </div>
+                            </div>
+
+                            <button id="btn-toggle-pcr" onclick="togglePCR()" class="w-full bg-red-600 active:bg-red-700 hover:bg-red-500 text-white font-bold text-lg md:text-xl py-5 md:py-6 rounded-xl shadow-lg transition-transform transform active:scale-95 flex items-center justify-center gap-2">
+                                <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                INICIAR PROTOCOLO PCR
+                            </button>
+                        </div>
+
+                        <!-- Coluna Direita: Ações -->
+                        <div class="flex flex-col justify-center">
+                            <div id="action-buttons" class="grid grid-cols-2 gap-3 opacity-50 pointer-events-none transition-opacity">
+                                <button onclick="registerAction('Choque Aplicado')" class="bg-yellow-500 active:bg-yellow-600 hover:bg-yellow-400 text-yellow-900 font-bold py-4 rounded-xl shadow active:scale-95 transition-transform flex flex-col items-center justify-center">
+                                    <span class="text-xl md:text-2xl mb-1">⚡</span> CHOQUE
+                                </button>
+                                <button onclick="resetCycle()" class="bg-blue-500 active:bg-blue-600 hover:bg-blue-400 text-white font-bold py-4 rounded-xl shadow active:scale-95 transition-transform text-sm flex flex-col items-center justify-center">
+                                    <span class="text-xl md:text-2xl mb-1">🔄</span> RESET CICLO
+                                </button>
+
+                                <button id="btn-epi" onclick="administerEpi()" class="bg-purple-600 active:bg-purple-700 hover:bg-purple-500 text-white font-bold py-4 md:py-6 rounded-xl shadow active:scale-95 transition-transform flex flex-col items-center justify-center col-span-2 text-lg">
+                                    <span>💉 EPINEFRINA (1mg)</span>
+                                    <span id="epi-status" class="text-sm font-normal opacity-90 mt-1 bg-black/20 px-3 py-1 rounded-full">Pronta para uso</span>
+                                </button>
+
+                                <button onclick="registerAction('Amiodarona/Lidocaína')" class="bg-indigo-500 active:bg-indigo-600 hover:bg-indigo-400 text-white font-bold py-4 rounded-xl shadow active:scale-95 transition-transform text-sm">
+                                    💊 AMIODARONA / LIDO
+                                </button>
+                                <button onclick="registerAction('Via Aérea Avançada')" class="bg-teal-500 active:bg-teal-600 hover:bg-teal-400 text-white font-bold py-4 rounded-xl shadow active:scale-95 transition-transform text-sm">
+                                    🫁 VIA AÉREA AVANÇ.
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 text-center text-xs text-gray-400 border-t pt-4">
+                        Desenvolvido por Jaime Eduardo | Whats: (51) 98550-2897
+                    </div>
+                </section>
+
+                <!-- ABA 2: IAM / AVE -->
+                <section id="tab-iam-ave" class="tab-content p-4 md:p-8 pb-24 md:pb-8">
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <!-- Coluna IAM -->
+                        <div>
+                            <h2 class="text-xl font-black text-red-700 border-b-2 border-red-200 pb-2 mb-4 flex items-center gap-2">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                                Protocolo IAM (MONAB)
+                            </h2>
+                            <div class="grid grid-cols-1 gap-3 mb-8 md:mb-0">
+                                <div class="bg-red-50 p-4 rounded-xl border border-red-100 shadow-sm hover:shadow-md transition-shadow">
+                                    <h3 class="font-bold text-red-800 text-lg">M - Morfina</h3>
+                                    <p class="text-sm text-gray-700 mt-1"><strong>Dose:</strong> 2 a 4 mg IV a cada 5 a 15 min.</p>
+                                    <p class="text-xs text-gray-500 mt-1">Indicado se dor refratária ao nitrato.</p>
+                                </div>
+                                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 shadow-sm hover:shadow-md transition-shadow">
+                                    <h3 class="font-bold text-blue-800 text-lg">O - Oxigênio</h3>
+                                    <p class="text-sm text-gray-700 mt-1"><strong>Alvo:</strong> Manter SatO2 > 90%.</p>
+                                    <p class="text-xs text-gray-500 mt-1">Cateter nasal 2 a 4 L/min se necessário.</p>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                                    <h3 class="font-bold text-gray-800 text-lg">N - Nitrato (Isossorbida)</h3>
+                                    <p class="text-sm text-gray-700 mt-1"><strong>Dose:</strong> 5mg Sublingual (pode repetir até 3x).</p>
+                                    <p class="text-xs text-red-600 font-bold mt-1 bg-red-100 p-2 rounded">⚠ CONTRAINDICADO: Infarto de VD ou uso de Sildenafil.</p>
+                                </div>
+                                <div class="bg-yellow-50 p-4 rounded-xl border border-yellow-200 shadow-sm hover:shadow-md transition-shadow">
+                                    <h3 class="font-bold text-yellow-800 text-lg">A - AAS (Aspirina)</h3>
+                                    <p class="text-sm text-gray-700 mt-1"><strong>Dose:</strong> 160 a 325 mg (Mastigar).</p>
+                                </div>
+                                <div class="bg-purple-50 p-4 rounded-xl border border-purple-100 shadow-sm hover:shadow-md transition-shadow">
+                                    <h3 class="font-bold text-purple-800 text-lg">B - Clopidogrel</h3>
+                                    <p class="text-sm text-gray-700 mt-1"><strong>Ataque:</strong> 300 mg a 600 mg VO.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Coluna AVE -->
+                        <div>
+                            <h2 class="text-xl font-black text-indigo-700 border-b-2 border-indigo-200 pb-2 mb-4 flex items-center gap-2">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                Protocolo AVE
+                            </h2>
+                            <div class="grid grid-cols-1 gap-3">
+                                <div class="bg-orange-50 p-4 rounded-xl border border-orange-200 shadow-sm hover:shadow-md transition-shadow">
+                                    <h3 class="font-bold text-orange-800 text-lg">Primeiros Passos (Emergência)</h3>
+                                    <ul class="text-sm text-gray-700 list-disc pl-5 mt-2 space-y-1">
+                                        <li><strong class="text-red-600">HGT IMEDIATO:</strong> Descartar hipoglicemia (simula AVE).</li>
+                                        <li>Acesso Venoso Periférico calibroso.</li>
+                                        <li>Monitorização e O2 (se Sat < 94%).</li>
+                                    </ul>
+                                </div>
+                                <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-200 shadow-sm hover:shadow-md transition-shadow">
+                                    <h3 class="font-bold text-indigo-800 text-lg">Trombólise (Alteplase)</h3>
+                                    <p class="text-sm text-gray-700 mt-1"><strong>Dose Total:</strong> 0,9 mg/kg (Máx: 90 mg).</p>
+                                    <div class="mt-3 text-sm bg-white p-3 rounded-lg border border-indigo-100">
+                                        <p class="font-bold mb-1">Preparo/Administração:</p>
+                                        <ul class="list-disc pl-5 text-indigo-900 font-medium space-y-1">
+                                            <li><span class="bg-indigo-100 px-1 rounded">10% da dose</span> em Bolus (1 min).</li>
+                                            <li><span class="bg-indigo-100 px-1 rounded">90% da dose</span> em BIC (60 min).</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="bg-red-50 p-4 rounded-xl border border-red-100 shadow-sm hover:shadow-md transition-shadow">
+                                    <h3 class="font-bold text-red-800 text-lg">Controle Pressórico (PA)</h3>
+                                    <p class="text-sm text-gray-700 mt-1">
+                                        Para trombolisar: <strong>< 185/110 mmHg</strong>.<br>
+                                        Durante/após (24h): <strong>< 180/105 mmHg</strong>.
+                                    </p>
+                                    <p class="text-xs text-gray-500 mt-2 bg-white p-2 rounded border border-red-50">Fármacos: Nitroprussiato (Nipride), Labetalol, Metoprolol.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 text-center text-xs text-gray-400 border-t pt-4">
+                        Desenvolvido por Jaime Eduardo | Whats: (51) 98550-2897
+                    </div>
+                </section>
+
+                <!-- ABA 3: 5Hs e 5Ts -->
+                <section id="tab-h5t" class="tab-content p-4 md:p-8 pb-24 md:pb-8 h-full">
+                    <h2 class="text-xl font-black text-gray-800 mb-6 text-center">Causas Reversíveis de PCR</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- 5Hs -->
+                        <div class="bg-blue-50 p-5 rounded-2xl shadow-sm border border-blue-100">
+                            <h3 class="font-black text-blue-800 text-xl text-center mb-4 border-b-2 border-blue-200 pb-2">Os 5 H's</h3>
+                            <ul class="text-sm md:text-base space-y-4 text-gray-700">
+                                <li class="flex items-center gap-2"><span class="bg-blue-200 text-blue-800 font-bold w-6 h-6 flex justify-center items-center rounded-full shrink-0">H</span><div><strong>Hipovolemia:</strong> Reposição volêmica</div></li>
+                                <li class="flex items-center gap-2"><span class="bg-blue-200 text-blue-800 font-bold w-6 h-6 flex justify-center items-center rounded-full shrink-0">H</span><div><strong>Hipóxia:</strong> Via aérea e ventilação</div></li>
+                                <li class="flex items-center gap-2"><span class="bg-blue-200 text-blue-800 font-bold w-6 h-6 flex justify-center items-center rounded-full shrink-0">H</span><div><strong>Hidrogênio (Acidose):</strong> Bicarbonato/Ventilação</div></li>
+                                <li class="flex items-center gap-2"><span class="bg-blue-200 text-blue-800 font-bold w-6 h-6 flex justify-center items-center rounded-full shrink-0">H</span><div><strong>Hipo/Hipercalemia:</strong> Cálcio + Insulina</div></li>
+                                <li class="flex items-center gap-2"><span class="bg-blue-200 text-blue-800 font-bold w-6 h-6 flex justify-center items-center rounded-full shrink-0">H</span><div><strong>Hipotermia:</strong> Aquecimento ativo</div></li>
+                            </ul>
+                        </div>
+                        <!-- 5Ts -->
+                        <div class="bg-red-50 p-5 rounded-2xl shadow-sm border border-red-100">
+                            <h3 class="font-black text-red-800 text-xl text-center mb-4 border-b-2 border-red-200 pb-2">Os 5 T's</h3>
+                            <ul class="text-sm md:text-base space-y-4 text-gray-700">
+                                <li class="flex items-center gap-2"><span class="bg-red-200 text-red-800 font-bold w-6 h-6 flex justify-center items-center rounded-full shrink-0">T</span><div><strong>Tensão (Pneumotórax):</strong> Descompressão</div></li>
+                                <li class="flex items-center gap-2"><span class="bg-red-200 text-red-800 font-bold w-6 h-6 flex justify-center items-center rounded-full shrink-0">T</span><div><strong>Tamponamento Cardíaco:</strong> Pericardiocentese</div></li>
+                                <li class="flex items-center gap-2"><span class="bg-red-200 text-red-800 font-bold w-6 h-6 flex justify-center items-center rounded-full shrink-0">T</span><div><strong>Toxinas:</strong> Antídotos específicos</div></li>
+                                <li class="flex items-center gap-2"><span class="bg-red-200 text-red-800 font-bold w-6 h-6 flex justify-center items-center rounded-full shrink-0">T</span><div><strong>Trombose Pulmonar (TEP):</strong> Fibrinolítico</div></li>
+                                <li class="flex items-center gap-2"><span class="bg-red-200 text-red-800 font-bold w-6 h-6 flex justify-center items-center rounded-full shrink-0">T</span><div><strong>Trombose Coronariana:</strong> Cateterismo</div></li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 text-center text-xs text-gray-400 border-t pt-4">
+                        Desenvolvido por Jaime Eduardo | Whats: (51) 98550-2897
+                    </div>
+                </section>
+
+                <!-- ABA 4: Histórico -->
+                <section id="tab-log" class="tab-content p-4 md:p-8 pb-24 md:pb-8 h-full flex flex-col min-h-[400px]">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+                        <h2 class="text-xl font-black text-gray-800">Registro de Eventos (Log)</h2>
+                        <button onclick="copyLog()" class="w-full md:w-auto bg-gray-800 hover:bg-gray-700 text-white px-6 py-3 rounded-xl text-sm font-bold shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                            Copiar para o Prontuário
+                        </button>
+                    </div>
+                    
+                    <div id="log-container" class="flex-1 bg-gray-50 border border-gray-200 rounded-xl p-4 overflow-y-auto space-y-3 shadow-inner text-sm md:text-base">
+                        <!-- Logs aparecerão aqui -->
+                        <div class="text-gray-400 text-center italic mt-10">O histórico da reanimação aparecerá aqui.</div>
+                    </div>
+
+                    <div class="mt-8 text-center text-xs text-gray-400 border-t pt-4 shrink-0">
+                        Desenvolvido por Jaime Eduardo | Whats: (51) 98550-2897
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
     <script>
         // Variáveis de Estado
         let isPcrActive = false;
