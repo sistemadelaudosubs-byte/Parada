@@ -290,6 +290,42 @@
             return now.toLocaleTimeString('pt-BR');
         }
 
+        // Função para gerar um aviso sonoro (Beep duplo) usando Web Audio API nativa
+        function playStartSound() {
+            try {
+                // Instancia o contexto de áudio do navegador
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                
+                const ctx = new AudioContext();
+                
+                function createBeep(freq, startTime, duration) {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    
+                    osc.type = 'sine'; // Som suave, estilo equipamento médico
+                    osc.frequency.setValueAtTime(freq, startTime);
+                    
+                    // Fade in/out no volume para evitar "estalos" no alto-falante
+                    gain.gain.setValueAtTime(0, startTime);
+                    gain.gain.linearRampToValueAtTime(0.5, startTime + 0.05);
+                    gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+                    
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    
+                    osc.start(startTime);
+                    osc.stop(startTime + duration);
+                }
+                
+                // Toca um beep duplo (frequência de 880Hz e depois 1046Hz)
+                createBeep(880, ctx.currentTime, 0.2);
+                createBeep(1046, ctx.currentTime + 0.3, 0.4);
+            } catch (e) {
+                console.log("Áudio não suportado no navegador", e);
+            }
+        }
+
         // Navegação por abas
         function switchTab(tabId) {
             // Oculta todas as abas
@@ -355,14 +391,14 @@
                 // Iniciar
                 isPcrActive = true;
                 pcrStartTime = getClockTime();
+                
+                // Dispara o alerta sonoro
+                playStartSound();
+                
                 timerInterval = setInterval(tick, 1000);
                 
                 // Atualizar UI
-                btnTogglePcr.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path></svg> FINALIZAR PROTOCOLO PCR';
-                btnTogglePcr.classList.replace('bg-red-600', 'bg-gray-800');
-                btnTogglePcr.classList.replace('active:bg-red-700', 'active:bg-gray-900');
-                actionButtons.classList.remove('opacity-50', 'pointer-events-none');
-                statusBar.innerText = `Atendimento Iniciado: ${pcrStartTime}`;
+                btnTogglePcr.innerHTML = '<svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path></svg> FINALIZAR PROTOCOLO PCR';
                 
                 registerAction("Início da RCP (Código Azul)");
             } else {
